@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard - EventHub</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <header>
+        <nav>
+            <h1>EventHub</h1>
+
+            <ul>
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="events.html">Events</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="#" id="logoutBtn">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Dashboard -->
+    <section class="dashboard">
+
+        <h2 id="welcomeMessage">Welcome! 👋</h2>
+
+        <p>Manage your event registrations here.</p>
+
+        <div class="dashboard-container">
+
+            <!-- Profile Card -->
+            <div class="dashboard-card">
+
+                <h3>👤 My Profile</h3>
+
+                <p>
+                    <strong>Name:</strong>
+                    <span id="userName">Loading...</span>
+                </p>
+
+                <p>
+                    <strong>Email:</strong>
+                    <span id="userEmail">Loading...</span>
+                </p>
+
+            </div>
+
+
+            <!-- Registration Card -->
+            <div class="dashboard-card">
+
+                <h3>📅 My Registrations</h3>
+
+                <p id="registrationMessage">
+                    Loading registrations...
+                </p>
+
+                <ul id="registrationList"></ul>
+
+            </div>
+
+
+            <!-- Explore Events -->
+            <div class="dashboard-card">
+
+                <h3>🎉 Explore More Events</h3>
+
+                <p>
+                    Discover and register for new college events.
+                </p>
+
+                <a href="events.html" class="btn">
+                    View Events
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- Footer -->
+    <footer>
+
+        <p>
+            © 2026 EventHub | College Event Management System
+        </p>
+
+    </footer>
+
+
+    <script src="../js/script.js"></script>
+
+    <script>
+
+        // ===============================
+        // LOAD USER DETAILS
+        // ===============================
+
+        const token = localStorage.getItem("token");
+        const userData = localStorage.getItem("user");
+
+        if (!token) {
+
+            alert("Please login first!");
+
+            window.location.href = "login.html";
+
+        } else {
+
+            if (userData) {
+
+                const user = JSON.parse(userData);
+
+                document.getElementById("userName").textContent =
+                    user.name || "Student";
+
+                document.getElementById("userEmail").textContent =
+                    user.email || "Not available";
+
+                document.getElementById("welcomeMessage").textContent =
+                    `Welcome, ${user.name || "Student"}! 👋`;
+            }
+
+
+            // ===============================
+            // GET MY REGISTRATIONS
+            // ===============================
+
+            fetch("http://localhost:5000/api/dashboard/my-registrations", {
+
+                method: "GET",
+
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+
+            })
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                const registrationList =
+                    document.getElementById("registrationList");
+
+                const registrationMessage =
+                    document.getElementById("registrationMessage");
+
+
+                if (data.registrations && data.registrations.length > 0) {
+
+                    registrationMessage.textContent =
+                        "You have registered for:";
+
+
+                    data.registrations.forEach(event => {
+
+                        const li = document.createElement("li");
+
+                        li.textContent =
+                            `${event.event_name} - ${event.event_date}`;
+
+                        registrationList.appendChild(li);
+
+                    });
+
+                } else {
+
+                    registrationMessage.textContent =
+                        "You have not registered for any events yet.";
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error("Dashboard error:", error);
+
+                document.getElementById("registrationMessage").textContent =
+                    "Unable to load registrations.";
+
+            });
+
+        }
+
+
+        // ===============================
+        // LOGOUT
+        // ===============================
+
+        document.getElementById("logoutBtn").addEventListener("click", function(event) {
+
+            event.preventDefault();
+
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+
+            alert("Logged out successfully!");
+
+            window.location.href = "login.html";
+
+        });
+
+    </script>
+
+</body>
+
+</html>

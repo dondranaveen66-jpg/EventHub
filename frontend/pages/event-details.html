@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Event Details - EventHub</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <!-- ================================
+         NAVIGATION
+    ================================= -->
+
+    <header>
+
+        <nav>
+
+            <h1>EventHub</h1>
+
+            <ul>
+
+                <li>
+                    <a href="../index.html">Home</a>
+                </li>
+
+                <li>
+                    <a href="events.html">Events</a>
+                </li>
+
+                <li>
+                    <a href="login.html">Login</a>
+                </li>
+
+                <li>
+                    <a href="signup.html">Sign Up</a>
+                </li>
+
+                <li>
+                    <a href="dashboard.html">Dashboard</a>
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </header>
+
+
+    <!-- ================================
+         EVENT DETAILS
+    ================================= -->
+
+    <section class="event-details">
+
+        <div
+            class="event-details-card"
+            id="eventDetailsCard">
+
+            <p>Loading event details...</p>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================
+         FOOTER
+    ================================= -->
+
+    <footer>
+
+        <p>
+            © 2026 EventHub |
+            College Event Management System
+        </p>
+
+    </footer>
+
+
+    <script src="../js/script.js"></script>
+
+
+    <script>
+
+        // ==========================================
+        // GET EVENT ID FROM URL
+        // ==========================================
+
+        const urlParams =
+            new URLSearchParams(window.location.search);
+
+        const eventId =
+            urlParams.get("id");
+
+
+        const eventDetailsCard =
+            document.getElementById("eventDetailsCard");
+
+
+        // ==========================================
+        // CHECK EVENT ID
+        // ==========================================
+
+        if (!eventId) {
+
+            eventDetailsCard.innerHTML = `
+
+                <h2>Event Not Found</h2>
+
+                <p>
+                    No event was selected.
+                </p>
+
+                <a
+                    href="events.html"
+                    class="btn">
+
+                    ← Back to Events
+
+                </a>
+
+            `;
+
+        } else {
+
+            loadEventDetails();
+
+        }
+
+
+        // ==========================================
+        // LOAD EVENT FROM DATABASE
+        // ==========================================
+
+        async function loadEventDetails() {
+
+            try {
+
+                const response = await fetch(
+                    `http://localhost:5000/api/events/${eventId}`
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    eventDetailsCard.innerHTML = `
+
+                        <h2>Event Not Found</h2>
+
+                        <p>
+                            ${data.message || "Unable to find this event."}
+                        </p>
+
+                        <a
+                            href="events.html"
+                            class="btn">
+
+                            ← Back to Events
+
+                        </a>
+
+                    `;
+
+                    return;
+                }
+
+
+                const event =
+                    data.event;
+
+
+                // ==========================================
+                // DISPLAY EVENT
+                // ==========================================
+
+                eventDetailsCard.innerHTML = `
+
+                    <div class="event-details-icon">
+                        🎉
+                    </div>
+
+                    <h2>
+                        ${event.event_name}
+                    </h2>
+
+                    <p class="event-description">
+                        ${event.description}
+                    </p>
+
+
+                    <div class="event-info">
+
+                        <p>
+                            <strong>📅 Date:</strong>
+                            ${formatEventDate(event.event_date)}
+                        </p>
+
+                        <p>
+                            <strong>📍 Location:</strong>
+                            ${event.event_location}
+                        </p>
+
+                        <p>
+                            <strong>🎟️ Entry:</strong>
+                            Free
+                        </p>
+
+                    </div>
+
+
+                    <div class="event-details-actions">
+
+                        <button
+                            class="btn register-event-btn"
+                            data-event-id="${event.event_id}">
+
+                            Register for Event
+
+                        </button>
+
+
+                        <a
+                            href="events.html"
+                            class="btn secondary-btn">
+
+                            ← Back to Events
+
+                        </a>
+
+                    </div>
+
+                `;
+
+
+                // ==========================================
+                // REGISTER BUTTON
+                // ==========================================
+
+                const registerButton =
+                    document.querySelector(
+                        ".register-event-btn"
+                    );
+
+
+                registerButton.addEventListener(
+                    "click",
+                    registerForEvent
+                );
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Event details error:",
+                    error
+                );
+
+
+                eventDetailsCard.innerHTML = `
+
+                    <h2>Unable to Load Event</h2>
+
+                    <p>
+                        Cannot connect to the EventHub server.
+                    </p>
+
+                    <a
+                        href="events.html"
+                        class="btn">
+
+                        ← Back to Events
+
+                    </a>
+
+                `;
+
+            }
+
+        }
+
+
+        // ==========================================
+        // FORMAT DATE
+        // ==========================================
+
+        function formatEventDate(date) {
+
+            if (!date) {
+                return "Date not available";
+            }
+
+
+            const d =
+                new Date(date);
+
+
+            return d.toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
+                }
+            );
+
+        }
+
+
+        // ==========================================
+        // REGISTER EVENT
+        // ==========================================
+
+        async function registerForEvent() {
+
+            const button =
+                this;
+
+
+            const token =
+                localStorage.getItem("token");
+
+
+            // User not logged in
+
+            if (!token) {
+
+                alert(
+                    "Please login first to register for this event!"
+                );
+
+                window.location.href =
+                    "login.html";
+
+                return;
+            }
+
+
+            const selectedEventId =
+                button.dataset.eventId;
+
+
+            button.disabled = true;
+
+            button.textContent =
+                "Registering...";
+
+
+            try {
+
+                const response = await fetch(
+                    "http://localhost:5000/api/registrations/register",
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "Authorization":
+                                `Bearer ${token}`
+
+                        },
+
+                        body: JSON.stringify({
+
+                            eventId:
+                                selectedEventId
+
+                        })
+
+                    }
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (response.ok) {
+
+                    alert(data.message);
+
+
+                    button.textContent =
+                        "✓ Registered";
+
+                    button.disabled =
+                        true;
+
+                } else {
+
+                    alert(
+                        data.message ||
+                        "Registration failed."
+                    );
+
+
+                    button.disabled =
+                        false;
+
+                    button.textContent =
+                        "Register for Event";
+
+                }
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Registration error:",
+                    error
+                );
+
+
+                alert(
+                    "Cannot connect to server."
+                );
+
+
+                button.disabled =
+                    false;
+
+                button.textContent =
+                    "Register for Event";
+
+            }
+
+        }
+
+    </script>
+
+</body>
+
+</html>
